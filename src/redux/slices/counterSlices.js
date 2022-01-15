@@ -1,32 +1,46 @@
-import {createSlice} from '@reduxjs/toolkit'
+import {createAsyncThunk, createSlice} from '@reduxjs/toolkit'
+import axios from 'axios'
 
-//initialstate
-const initialState = {
-        value: 0,
-}
 
-export const counterSlices = createSlice({
-        name: "counter",
-        initialState,
-        reducers:{
-                increment: (state,action) => {
-                    state.value++;    
-                },
-                decrement: (state,action) => {
-                    state.value--;    
-                },
-                increaseAmount: (state,action) => {
-                    state.value += action.payload;
-                },
+//! 1- create the action
+
+export const fetchPost = createAsyncThunk('post/list', async (payload, {rejectWithValue, getState , dispatch})=> {
+
+        try {
+                const {data} = await axios.get('https://jsonplaceholder.typicode.com/posts')
+                return data
+
+        } catch (error) {
+                console.log(error);
+                return error?.response
         }
-
 })
 
+//! 2- slices
 
-// genertate the action creators
-export const { increment, decrement, increaseAmount } = counterSlices.actions
+const postSlices = createSlice({
+        name: "post",
+        initialState: {},
+        extraReducers: {
+                //map notation
+                //! handle pending state
+                [fetchPost.pending] : (state, action) => {
+                        state.loading = true;
+                },
+                //! handle fulfilled
+                [fetchPost.fulfilled] : (state, action) => {
+                        state.postsList = action.payload;
+                        state.loading = false
+                },
+                //! handle rejection
+                [fetchPost.rejection] : (state, action) => {
+                        state.loading = false;
+                        state.error = action.payload
 
+                }
+        }
+})
 
-//export reducers
+//! exporting
 
-export default counterSlices.reducer
+export default postSlices.reducer
